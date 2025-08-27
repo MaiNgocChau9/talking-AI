@@ -1,5 +1,12 @@
 body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin: 0;
+  font-family: 'Google Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #1a1c1e; /* Fallback background */
+  color: #e2e2e6;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  overflow: hidden;
 }

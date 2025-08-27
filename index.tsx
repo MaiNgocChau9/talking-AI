@@ -8,22 +8,23 @@ import {GoogleGenAI, LiveServerMessage, Modality, Session} from '@google/genai';
 import {LitElement, css, html} from 'lit';
 import {customElement, state} from 'lit/decorators.js';
 import {createBlob, decode, decodeAudioData} from './utils';
-import './visual-3d';
 
 @customElement('gdm-live-audio')
 export class GdmLiveAudio extends LitElement {
   @state() isRecording = false;
-  @state() status = '';
+  @state() status = 'Nhấn mic để nói';
   @state() error = '';
 
   private client: GoogleGenAI;
   private session: Session;
-  private inputAudioContext = new (window.AudioContext ||
-    window.webkitAudioContext)({sampleRate: 16000});
-  private outputAudioContext = new (window.AudioContext ||
-    window.webkitAudioContext)({sampleRate: 24000});
-  @state() inputNode = this.inputAudioContext.createGain();
-  @state() outputNode = this.outputAudioContext.createGain();
+  // Fix for TS error: 'webkitAudioContext' does not exist on type 'Window'.
+  private inputAudioContext = new ((window as any).AudioContext ||
+    (window as any).webkitAudioContext)({sampleRate: 16000});
+  // Fix for TS error: 'webkitAudioContext' does not exist on type 'Window'.
+  private outputAudioContext = new ((window as any).AudioContext ||
+    (window as any).webkitAudioContext)({sampleRate: 24000});
+  private inputNode = this.inputAudioContext.createGain();
+  private outputNode = this.outputAudioContext.createGain();
   private nextStartTime = 0;
   private mediaStream: MediaStream;
   private sourceNode: AudioBufferSourceNode;
@@ -31,47 +32,108 @@ export class GdmLiveAudio extends LitElement {
   private sources = new Set<AudioBufferSourceNode>();
 
   static styles = css`
-    #status {
-      position: absolute;
-      bottom: 5vh;
-      left: 0;
-      right: 0;
-      z-index: 10;
-      text-align: center;
+    :host {
+      --md-sys-color-primary: #89b3ff;
+      --md-sys-color-on-primary: #ffffff;
+      --md-sys-color-surface-container-highest: rgba(255, 255, 255, 0.1);
+      --md-sys-color-outline-variant: rgba(255, 255, 255, 0.2);
+      --md-sys-color-scrim: #000000;
+      --md-sys-color-on-surface: #e0e0e0;
+      --md-sys-color-on-surface-variant: #c2c7ce;
+      --md-sys-color-error: #ff8989;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+      box-sizing: border-box;
+      padding: 16px;
+      overflow: hidden;
+      position: relative;
+      background-image: linear-gradient(
+          rgba(0, 0, 0, 0.4),
+          rgba(0, 0, 0, 0.4)
+        ),
+        url('https://images.unsplash.com/photo-1622547748225-3fc4abd2cca0?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+      background-size: cover;
+      background-position: center;
     }
 
-    .controls {
-      z-index: 10;
-      position: absolute;
-      bottom: 10vh;
-      left: 0;
-      right: 0;
+    #status {
+      flex-grow: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-direction: column;
-      gap: 10px;
+      color: var(--md-sys-color-on-primary);
+      font-size: 2.2rem;
+      text-align: center;
+      min-height: 24px;
+      font-weight: 400;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
 
-      button {
-        outline: none;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.1);
-        width: 64px;
-        height: 64px;
-        cursor: pointer;
-        font-size: 24px;
-        padding: 0;
-        margin: 0;
+    .error {
+      color: var(--md-sys-color-error);
+      font-weight: 500;
+    }
 
-        &:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
+    .controls {
+      display: flex;
+      gap: 16px;
+      background-color: rgba(40, 40, 50, 0.5);
+      padding: 12px 20px;
+      border-radius: 999px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 40px;
+    }
+
+    .control-button {
+      background: transparent;
+      border: none;
+      color: var(--md-sys-color-on-surface);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s, color 0.2s, box-shadow 0.3s;
+      outline: none;
+    }
+
+    .control-button:hover:not(:disabled) {
+      background-color: var(--md-sys-color-surface-container-highest);
+    }
+
+    .control-button .material-symbols-outlined {
+      font-size: 28px;
+    }
+    
+    .control-button:disabled {
+        color: var(--md-sys-color-on-surface-variant);
+        cursor: not-allowed;
+        background-color: transparent;
+    }
+
+    .mic-button.recording {
+      color: var(--md-sys-color-primary);
+      box-shadow: 0 0 12px 2px var(--md-sys-color-primary), 0 0 20px 4px rgba(137, 179, 255, 0.5);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 12px 2px var(--md-sys-color-primary), 0 0 20px 4px rgba(137, 179, 255, 0.5);
       }
-
-      button[disabled] {
-        display: none;
+      50% {
+        box-shadow: 0 0 16px 4px var(--md-sys-color-primary), 0 0 28px 8px rgba(137, 179, 255, 0.5);
+      }
+      100% {
+        box-shadow: 0 0 12px 2px var(--md-sys-color-primary), 0 0 20px 4px rgba(137, 179, 255, 0.5);
       }
     }
   `;
@@ -89,7 +151,8 @@ export class GdmLiveAudio extends LitElement {
     this.initAudio();
 
     this.client = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
+      // Fix: Use process.env.API_KEY as per coding guidelines.
+      apiKey: process.env.API_KEY,
     });
 
     this.outputNode.connect(this.outputAudioContext.destination);
@@ -105,7 +168,10 @@ export class GdmLiveAudio extends LitElement {
         model: model,
         callbacks: {
           onopen: () => {
-            this.updateStatus('Opened');
+            this.updateStatus('Đã kết nối');
+            setTimeout(() => {
+                if (!this.isRecording) this.updateStatus('Nhấn mic để nói');
+            }, 1000);
           },
           onmessage: async (message: LiveServerMessage) => {
             const audio =
@@ -126,7 +192,7 @@ export class GdmLiveAudio extends LitElement {
               const source = this.outputAudioContext.createBufferSource();
               source.buffer = audioBuffer;
               source.connect(this.outputNode);
-              source.addEventListener('ended', () =>{
+              source.addEventListener('ended', () => {
                 this.sources.delete(source);
               });
 
@@ -136,8 +202,8 @@ export class GdmLiveAudio extends LitElement {
             }
 
             const interrupted = message.serverContent?.interrupted;
-            if(interrupted) {
-              for(const source of this.sources.values()) {
+            if (interrupted) {
+              for (const source of this.sources.values()) {
                 source.stop();
                 this.sources.delete(source);
               }
@@ -148,28 +214,37 @@ export class GdmLiveAudio extends LitElement {
             this.updateError(e.message);
           },
           onclose: (e: CloseEvent) => {
-            this.updateStatus('Close:' + e.reason);
+            this.updateStatus('Kết nối đã đóng.');
           },
         },
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {prebuiltVoiceConfig: {voiceName: 'Orus'}},
-            // languageCode: 'en-GB'
           },
         },
       });
     } catch (e) {
       console.error(e);
+      this.updateError(e.message);
     }
   }
 
   private updateStatus(msg: string) {
     this.status = msg;
+    this.error = '';
   }
 
   private updateError(msg: string) {
     this.error = msg;
+  }
+
+  private async toggleRecording() {
+    if (this.isRecording) {
+      this.stopRecording();
+    } else {
+      await this.startRecording();
+    }
   }
 
   private async startRecording() {
@@ -177,17 +252,14 @@ export class GdmLiveAudio extends LitElement {
       return;
     }
 
-    this.inputAudioContext.resume();
-
-    this.updateStatus('Requesting microphone access...');
+    await this.inputAudioContext.resume();
+    this.updateStatus('Tôi đang lắng nghe...');
 
     try {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: false,
       });
-
-      this.updateStatus('Microphone access granted. Starting capture...');
 
       this.sourceNode = this.inputAudioContext.createMediaStreamSource(
         this.mediaStream,
@@ -214,10 +286,9 @@ export class GdmLiveAudio extends LitElement {
       this.scriptProcessorNode.connect(this.inputAudioContext.destination);
 
       this.isRecording = true;
-      this.updateStatus('🔴 Recording... Capturing PCM chunks.');
     } catch (err) {
       console.error('Error starting recording:', err);
-      this.updateStatus(`Error: ${err.message}`);
+      this.updateError(`Lỗi micro: ${err.message}`);
       this.stopRecording();
     }
   }
@@ -226,8 +297,7 @@ export class GdmLiveAudio extends LitElement {
     if (!this.isRecording && !this.mediaStream && !this.inputAudioContext)
       return;
 
-    this.updateStatus('Stopping recording...');
-
+    this.updateStatus('Nhấn mic để nói');
     this.isRecording = false;
 
     if (this.scriptProcessorNode && this.sourceNode && this.inputAudioContext) {
@@ -242,66 +312,40 @@ export class GdmLiveAudio extends LitElement {
       this.mediaStream.getTracks().forEach((track) => track.stop());
       this.mediaStream = null;
     }
-
-    this.updateStatus('Recording stopped. Click Start to begin again.');
   }
 
   private reset() {
+    this.stopRecording();
     this.session?.close();
     this.initSession();
-    this.updateStatus('Session cleared.');
+    this.updateStatus('Phiên mới đã bắt đầu.');
   }
 
   render() {
     return html`
-      <div>
-        <div class="controls">
-          <button
-            id="resetButton"
-            @click=${this.reset}
-            ?disabled=${this.isRecording}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="40px"
-              viewBox="0 -960 960 960"
-              width="40px"
-              fill="#ffffff">
-              <path
-                d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z" />
-            </svg>
-          </button>
-          <button
-            id="startButton"
-            @click=${this.startRecording}
-            ?disabled=${this.isRecording}>
-            <svg
-              viewBox="0 0 100 100"
-              width="32px"
-              height="32px"
-              fill="#c80000"
-              xmlns="http://www.w3.org/2000/svg">
-              <circle cx="50" cy="50" r="50" />
-            </svg>
-          </button>
-          <button
-            id="stopButton"
-            @click=${this.stopRecording}
-            ?disabled=${!this.isRecording}>
-            <svg
-              viewBox="0 0 100 100"
-              width="32px"
-              height="32px"
-              fill="#000000"
-              xmlns="http://www.w3.org/2000/svg">
-              <rect x="0" y="0" width="100" height="100" rx="15" />
-            </svg>
-          </button>
-        </div>
+      <div id="status" class=${this.error ? 'error' : ''}>
+        ${this.error || this.status}
+      </div>
 
-        <div id="status"> ${this.error} </div>
-        <gdm-live-audio-visuals-3d
-          .inputNode=${this.inputNode}
-          .outputNode=${this.outputNode}></gdm-live-audio-visuals-3d>
+      <div class="controls">
+        <button
+          class="control-button"
+          @click=${this.reset}
+          ?disabled=${this.isRecording}
+          aria-label="New Session"
+        >
+          <span class="material-symbols-outlined">close</span>
+        </button>
+        <button
+          class="control-button mic-button ${this.isRecording ? 'recording' : ''}"
+          @click=${this.toggleRecording}
+          aria-label=${this.isRecording ? 'Stop recording' : 'Start recording'}
+        >
+          <span class="material-symbols-outlined">mic</span>
+        </button>
+        <button class="control-button" disabled aria-label="Settings">
+          <span class="material-symbols-outlined">settings</span>
+        </button>
       </div>
     `;
   }
