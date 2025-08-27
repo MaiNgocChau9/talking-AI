@@ -3,10 +3,14 @@ body {
   font-family: 'Google Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #1a1c1e; /* Fallback background */
   color: #e2e2e6;
   display: grid;
   place-items: center;
   min-height: 100vh;
   overflow: hidden;
+  /* Abstract gradient background inspired by the image */
+  background:
+    radial-gradient(ellipse at 70% 30%, hsla(195, 48%, 55%, 0.3) 0, transparent 50%),
+    radial-gradient(ellipse at 30% 70%, hsla(28, 40%, 60%, 0.3) 0, transparent 50%),
+    linear-gradient(135deg, #445155 0%, #303841 100%);
 }

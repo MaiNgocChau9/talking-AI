@@ -39,7 +39,7 @@ export class GdmLiveAudio extends LitElement {
       --md-sys-color-outline-variant: rgba(255, 255, 255, 0.2);
       --md-sys-color-scrim: #000000;
       --md-sys-color-on-surface: #e0e0e0;
-      --md-sys-color-on-surface-variant: #c2c7ce;
+      --md-sys-color-on-surface-variant: rgba(255, 255, 255, 0.4);
       --md-sys-color-error: #ff8989;
 
       display: flex;
@@ -52,13 +52,6 @@ export class GdmLiveAudio extends LitElement {
       padding: 16px;
       overflow: hidden;
       position: relative;
-      background-image: linear-gradient(
-          rgba(0, 0, 0, 0.4),
-          rgba(0, 0, 0, 0.4)
-        ),
-        url('https://images.unsplash.com/photo-1622547748225-3fc4abd2cca0?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-      background-size: cover;
-      background-position: center;
     }
 
     #status {
@@ -67,11 +60,11 @@ export class GdmLiveAudio extends LitElement {
       align-items: center;
       justify-content: center;
       color: var(--md-sys-color-on-primary);
-      font-size: 2.2rem;
+      font-size: 2rem;
       text-align: center;
       min-height: 24px;
-      font-weight: 400;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      font-weight: 500;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     }
 
     .error {
@@ -80,15 +73,17 @@ export class GdmLiveAudio extends LitElement {
     }
 
     .controls {
+      position: fixed;
+      bottom: 40px;
       display: flex;
-      gap: 16px;
-      background-color: rgba(40, 40, 50, 0.5);
-      padding: 12px 20px;
+      gap: 8px;
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 8px 12px;
       border-radius: 999px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      margin-bottom: 40px;
+      align-items: center;
     }
 
     .control-button {
@@ -96,45 +91,22 @@ export class GdmLiveAudio extends LitElement {
       border: none;
       color: var(--md-sys-color-on-surface);
       cursor: pointer;
-      padding: 8px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.2s, color 0.2s, box-shadow 0.3s;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: background-color 0.2s;
       outline: none;
     }
 
     .control-button:hover:not(:disabled) {
       background-color: var(--md-sys-color-surface-container-highest);
     }
-
-    .control-button .material-symbols-outlined {
-      font-size: 28px;
-    }
     
     .control-button:disabled {
         color: var(--md-sys-color-on-surface-variant);
         cursor: not-allowed;
-        background-color: transparent;
-    }
-
-    .mic-button.recording {
-      color: var(--md-sys-color-primary);
-      box-shadow: 0 0 12px 2px var(--md-sys-color-primary), 0 0 20px 4px rgba(137, 179, 255, 0.5);
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% {
-        box-shadow: 0 0 12px 2px var(--md-sys-color-primary), 0 0 20px 4px rgba(137, 179, 255, 0.5);
-      }
-      50% {
-        box-shadow: 0 0 16px 4px var(--md-sys-color-primary), 0 0 28px 8px rgba(137, 179, 255, 0.5);
-      }
-      100% {
-        box-shadow: 0 0 12px 2px var(--md-sys-color-primary), 0 0 20px 4px rgba(137, 179, 255, 0.5);
-      }
     }
   `;
 
@@ -151,7 +123,6 @@ export class GdmLiveAudio extends LitElement {
     this.initAudio();
 
     this.client = new GoogleGenAI({
-      // Fix: Use process.env.API_KEY as per coding guidelines.
       apiKey: process.env.API_KEY,
     });
 
@@ -332,19 +303,19 @@ export class GdmLiveAudio extends LitElement {
           class="control-button"
           @click=${this.reset}
           ?disabled=${this.isRecording}
-          aria-label="New Session"
+          aria-label="Close Session"
         >
-          <span class="material-symbols-outlined">close</span>
+          close
         </button>
         <button
-          class="control-button mic-button ${this.isRecording ? 'recording' : ''}"
+          class="control-button"
           @click=${this.toggleRecording}
           aria-label=${this.isRecording ? 'Stop recording' : 'Start recording'}
         >
-          <span class="material-symbols-outlined">mic</span>
+          mic
         </button>
         <button class="control-button" disabled aria-label="Settings">
-          <span class="material-symbols-outlined">settings</span>
+          settings
         </button>
       </div>
     `;
