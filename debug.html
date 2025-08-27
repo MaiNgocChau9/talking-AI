@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Talking AI — Debug</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+    <link rel="stylesheet" href="./style.css" />
+
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai@^0.9.0"
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <div class="app app--with-debug">
+      <aside class="debug-panel">
+        <h2>Debug Panel</h2>
+        <hr />
+
+        <label class="debug-label" for="voiceSelect">Voice Selection</label>
+        <select id="voiceSelect" class="debug-input"></select>
+
+        <div class="debug-section">
+          <div class="debug-subtitle">Audio Status</div>
+          <div class="audio-status">
+            <span id="audioDot" class="dot dot-red"></span>
+            <span id="audioText">No audio playing</span>
+          </div>
+        </div>
+
+        <div class="debug-section">
+          <div class="debug-subtitle">Status</div>
+          <div class="badges">
+            <span id="micBadge" class="badge">Microphone: Inactive</span>
+            <span id="recBadge" class="badge">Recognition: Inactive</span>
+          </div>
+        </div>
+
+        <div class="debug-section">
+          <div class="debug-subtitle">Live Transcript</div>
+          <pre id="liveTranscript" class="transcript">Waiting for speech...</pre>
+        </div>
+
+        <div class="debug-section">
+          <div class="debug-subtitle">Final Transcript</div>
+          <pre id="finalTranscript" class="transcript"></pre>
+        </div>
+
+        <div class="debug-section">
+          <div class="debug-subtitle">AI Response</div>
+          <pre id="aiResponse" class="transcript success">Waiting for question...</pre>
+        </div>
+
+        <div class="debug-section">
+          <button id="setKeyBtn" class="debug-btn">Set/Change API Key</button>
+          <button id="clearKeyBtn" class="debug-btn danger">Clear API Key</button>
+        </div>
+      </aside>
+
+      <section class="stage">
+        <div id="orb" class="orb" aria-label="Audio orb visualization"></div>
+
+        <div class="controls">
+          <button id="endBtn" class="btn btn-end" aria-label="End/Reset">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          <button id="micBtn" class="btn btn-mic" aria-label="Start recording">
+            <span class="material-symbols-outlined">mic</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

@@ -1,8 +1,0 @@
-{
-  "name": "Live Audio",
-  "description": "A minimalist voice assistant with an abstract background and streamlined controls. Tap the mic to start a conversation.",
-  "requestFramePermissions": [
-    "microphone"
-  ],
-  "prompt": ""
-}
