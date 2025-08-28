@@ -40,7 +40,7 @@ class LiveAudioApp {
     this.initAudio();
     
     // Get API key from environment or prompt
-    const apiKey = import.meta.env?.VITE_GEMINI_API_KEY || prompt('Enter your Gemini API key:');
+    const apiKey = "AIzaSyCOECCL9PByfFOyOgs935lOWtpKM4-4j-A" || prompt('Enter your Gemini API key:');
     
     if (!apiKey) {
       this.updateError('API key is required');
