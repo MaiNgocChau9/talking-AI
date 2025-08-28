@@ -1,6 +1,4 @@
-// utils.js
-
-export function encode(bytes) {
+function encode(bytes) {
   let binary = '';
   const len = bytes.byteLength;
   for (let i = 0; i < len; i++) {
@@ -9,7 +7,7 @@ export function encode(bytes) {
   return btoa(binary);
 }
 
-export function decode(base64) {
+function decode(base64) {
   const binaryString = atob(base64);
   const len = binaryString.length;
   const bytes = new Uint8Array(len);
@@ -19,44 +17,45 @@ export function decode(base64) {
   return bytes;
 }
 
-// The API expects an object with { mimeType, data (base64) }
-export function createBlobFromFloat32(float32) {
-  const l = float32.length;
+function createBlob(data) {
+  const l = data.length;
   const int16 = new Int16Array(l);
   for (let i = 0; i < l; i++) {
-    let s = float32[i];
-    // Clamp to [-1, 1] just in case
-    s = Math.max(-1, Math.min(1, s));
-    int16[i] = s < 0 ? s * 32768 : s * 32767;
+    // convert float32 -1 to 1 to int16 -32768 to 32767
+    int16[i] = data[i] * 32768;
   }
+  
   return {
     data: encode(new Uint8Array(int16.buffer)),
-    mimeType: 'audio/pcm;rate=16000',
+    mimeType: 'audio/pcm;rate=16000'
   };
 }
 
-export async function decodeAudioPCMToBuffer(
-  dataUint8,
-  audioCtx,
-  sampleRate,
-  numChannels
-) {
-  const frameCount = dataUint8.length / 2 / numChannels;
-  const buffer = audioCtx.createBuffer(numChannels, frameCount, sampleRate);
-
-  const dataInt16 = new Int16Array(
-    dataUint8.buffer,
-    dataUint8.byteOffset,
-    Math.floor(dataUint8.byteLength / 2)
+async function decodeAudioData(data, ctx, sampleRate, numChannels) {
+  const buffer = ctx.createBuffer(
+    numChannels,
+    data.length / 2 / numChannels,
+    sampleRate
   );
-
-  // Deinterleave into Float32 per channel
-  for (let ch = 0; ch < numChannels; ch++) {
-    const channelData = buffer.getChannelData(ch);
-    let writeIndex = 0;
-    for (let i = ch; i < dataInt16.length; i += numChannels) {
-      channelData[writeIndex++] = dataInt16[i] / 32768;
+  
+  const dataInt16 = new Int16Array(data.buffer);
+  const l = dataInt16.length;
+  const dataFloat32 = new Float32Array(l);
+  for (let i = 0; i < l; i++) {
+    dataFloat32[i] = dataInt16[i] / 32768.0;
+  }
+  
+  // Extract interleaved channels
+  if (numChannels === 0) {
+    buffer.copyToChannel(dataFloat32, 0);
+  } else {
+    for (let i = 0; i < numChannels; i++) {
+      const channel = dataFloat32.filter((_, index) => index % numChannels === i);
+      buffer.copyToChannel(channel, i);
     }
   }
+  
   return buffer;
 }
+
+export { createBlob, decode, decodeAudioData, encode };

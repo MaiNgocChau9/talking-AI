@@ -1,39 +1,23 @@
-<!doctype html>
-<html lang="vi">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Live Audio (Pure JS)</title>
-
-    <!-- Google fonts/icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-
-    <link rel="stylesheet" href="./index.css" />
-
-    <script type="importmap">
-    {
-      "imports": {
-        "@google/genai": "https://esm.sh/@google/genai@^0.9.0"
-      }
-    }
-    </script>
-  </head>
-  <body>
-    <main class="app">
-      <div id="status">Nhấn mic để nói</div>
-
-      <canvas id="viz" width="400" height="160" aria-hidden="true"></canvas>
-
-      <div class="controls">
-        <button id="closeBtn" class="control-button" aria-label="Close Session" disabled>close</button>
-        <button id="micBtn" class="control-button" aria-label="Start recording">mic</button>
-        <button id="settingsBtn" class="control-button" aria-label="Settings">settings</button>
-      </div>
-    </main>
-
-    <script type="module" src="./app.js"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Audio Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div id="app">
+    <div id="status">Nhấn mic để nói</div>
+    <div class="controls">
+      <button class="control-button" id="resetBtn">close</button>
+      <button class="control-button" id="micBtn">mic</button>
+      <button class="control-button" disabled>settings</button>
+    </div>
+  </div>
+  <script type="module" src="index.js"></script>
+</body>
 </html>
