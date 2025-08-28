@@ -3,19 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live Audio Assistant</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <title>Voice Chat UI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="index.css">
 </head>
 <body>
-  <div id="app">
+  <div class="main-content">
+    <div class="circle-container">
+      <p class="voice-circle"><i class="fa-solid fa-circle"></i></p>
+    </div>
     <div id="status">Nhấn mic để nói</div>
     <div class="controls">
-      <button class="control-button" id="resetBtn">close</button>
-      <button class="control-button" id="micBtn">mic</button>
-      <button class="control-button" disabled>settings</button>
+      <button class="btn exit" id="exitBtn">
+        <i class="fas fa-times"></i>
+      </button>
+      <button class="btn mic" id="micButton">
+        <i class="fas fa-microphone"></i>
+      </button>
     </div>
   </div>
   <script type="module" src="index.js"></script>

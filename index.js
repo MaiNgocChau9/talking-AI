@@ -15,14 +15,19 @@ class LiveAudioApp {
     this.nextStartTime = 0;
     this.sources = new Set();
     
+    // Audio visualization
+    this.analyser = null;
+    this.animationId = null;
+    
     // DOM elements
     this.statusEl = document.getElementById('status');
-    this.micBtn = document.getElementById('micBtn');
-    this.resetBtn = document.getElementById('resetBtn');
+    this.micBtn = document.getElementById('micButton');
+    this.exitBtn = document.getElementById('exitBtn');
+    this.voiceCircle = document.querySelector('.voice-circle');
     
     // Event listeners
     this.micBtn.addEventListener('click', () => this.toggleRecording());
-    this.resetBtn.addEventListener('click', () => this.reset());
+    this.exitBtn.addEventListener('click', () => this.exit());
     
     this.initClient();
   }
@@ -35,7 +40,7 @@ class LiveAudioApp {
     this.initAudio();
     
     // Get API key from environment or prompt
-    const apiKey = "AIzaSyCOECCL9PByfFOyOgs935lOWtpKM4-4j-A" || prompt('Enter your Gemini API key:');
+    const apiKey = import.meta.env?.VITE_GEMINI_API_KEY || prompt('Enter your Gemini API key:');
     
     if (!apiKey) {
       this.updateError('API key is required');
@@ -64,6 +69,7 @@ class LiveAudioApp {
             const audio = message.serverContent?.modelTurn?.parts[0]?.inlineData;
             
             if (audio) {
+              this.updateStatus('AI đang phản hồi...');
               this.nextStartTime = Math.max(
                 this.nextStartTime,
                 this.outputAudioContext.currentTime
@@ -79,13 +85,28 @@ class LiveAudioApp {
               const source = this.outputAudioContext.createBufferSource();
               source.buffer = audioBuffer;
               source.connect(this.outputNode);
+              
+              // Connect to analyser for visualization
+              if (!this.outputAnalyser) {
+                this.outputAnalyser = this.outputAudioContext.createAnalyser();
+                this.outputAnalyser.fftSize = 256;
+                this.outputNode.connect(this.outputAnalyser);
+              }
+              
               source.addEventListener('ended', () => {
                 this.sources.delete(source);
+                if (this.sources.size === 0 && !this.isRecording) {
+                  this.updateStatus('Nhấn mic để nói');
+                  this.stopVisualization();
+                }
               });
               
               source.start(this.nextStartTime);
               this.nextStartTime = this.nextStartTime + audioBuffer.duration;
               this.sources.add(source);
+              
+              // Start visualization for output
+              this.startOutputVisualization();
             }
             
             const interrupted = message.serverContent?.interrupted;
@@ -95,6 +116,7 @@ class LiveAudioApp {
                 this.sources.delete(source);
               }
               this.nextStartTime = 0;
+              this.stopVisualization();
             }
           },
           onerror: (e) => {
@@ -141,6 +163,13 @@ class LiveAudioApp {
   async startRecording() {
     if (this.isRecording) return;
     
+    // Stop any playing audio
+    for (const source of this.sources.values()) {
+      source.stop();
+      this.sources.delete(source);
+    }
+    this.nextStartTime = 0;
+    
     await this.inputAudioContext.resume();
     this.updateStatus('Tôi đang lắng nghe...');
     
@@ -152,6 +181,11 @@ class LiveAudioApp {
       
       this.sourceNode = this.inputAudioContext.createMediaStreamSource(this.mediaStream);
       this.sourceNode.connect(this.inputNode);
+      
+      // Create analyser for visualization
+      this.analyser = this.inputAudioContext.createAnalyser();
+      this.analyser.fftSize = 256;
+      this.sourceNode.connect(this.analyser);
       
       const bufferSize = 256;
       this.scriptProcessorNode = this.inputAudioContext.createScriptProcessor(bufferSize, 1, 1);
@@ -171,7 +205,13 @@ class LiveAudioApp {
       this.scriptProcessorNode.connect(this.inputAudioContext.destination);
       
       this.isRecording = true;
-      this.resetBtn.disabled = true;
+      this.exitBtn.disabled = true;
+      this.micBtn.classList.add('muted');
+      this.micBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+      this.voiceCircle.classList.add('listening');
+      
+      // Start visualization
+      this.startVisualization();
     } catch (err) {
       console.error('Error starting recording:', err);
       this.updateError(`Lỗi micro: ${err.message}`);
@@ -184,11 +224,19 @@ class LiveAudioApp {
     
     this.updateStatus('Nhấn mic để nói');
     this.isRecording = false;
-    this.resetBtn.disabled = false;
+    this.exitBtn.disabled = false;
+    this.micBtn.classList.remove('muted');
+    this.micBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+    this.voiceCircle.classList.remove('listening');
     
     if (this.scriptProcessorNode && this.sourceNode && this.inputAudioContext) {
       this.scriptProcessorNode.disconnect();
       this.sourceNode.disconnect();
+    }
+    
+    if (this.analyser) {
+      this.analyser.disconnect();
+      this.analyser = null;
     }
     
     this.scriptProcessorNode = null;
@@ -198,15 +246,73 @@ class LiveAudioApp {
       this.mediaStream.getTracks().forEach(track => track.stop());
       this.mediaStream = null;
     }
+    
+    this.stopVisualization();
   }
   
-  reset() {
+  startVisualization() {
+    if (!this.analyser) return;
+    
+    const updateCircleSize = () => {
+      if (!this.isRecording || !this.analyser) {
+        this.stopVisualization();
+        return;
+      }
+      
+      const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+      this.analyser.getByteFrequencyData(dataArray);
+      
+      const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+      const scale = Math.min(1 + average / 100, 1.5);
+      
+      this.voiceCircle.style.transform = `scale(${scale})`;
+      this.animationId = requestAnimationFrame(updateCircleSize);
+    };
+    
+    updateCircleSize();
+  }
+  
+  startOutputVisualization() {
+    if (!this.outputAnalyser) return;
+    
+    const updateCircleSize = () => {
+      if (!this.outputAnalyser || this.sources.size === 0) {
+        this.stopVisualization();
+        return;
+      }
+      
+      const dataArray = new Uint8Array(this.outputAnalyser.frequencyBinCount);
+      this.outputAnalyser.getByteFrequencyData(dataArray);
+      
+      const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+      const scale = Math.min(1 + average / 80, 1.3);
+      
+      this.voiceCircle.style.transform = `scale(${scale})`;
+      this.animationId = requestAnimationFrame(updateCircleSize);
+    };
+    
+    updateCircleSize();
+  }
+  
+  stopVisualization() {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+    this.voiceCircle.style.transform = 'scale(1)';
+  }
+  
+  exit() {
     this.stopRecording();
     if (this.session) {
       this.session.close();
     }
-    this.initSession();
-    this.updateStatus('Phiên mới đã bắt đầu.');
+    // Try to close the window, or redirect if that fails
+    if (window.close) {
+      window.close();
+    } else {
+      window.location.href = 'about:blank';
+    }
   }
 }
 

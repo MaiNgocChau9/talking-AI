@@ -1,81 +1,112 @@
 body {
   margin: 0;
-  font-family: 'Google Sans', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #e2e2e6;
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse at 70% 30%, hsla(195, 48%, 55%, 0.3) 0, transparent 50%),
-    radial-gradient(ellipse at 30% 70%, hsla(28, 40%, 60%, 0.3) 0, transparent 50%),
-    linear-gradient(135deg, #445155 0%, #303841 100%);
+  height: 100vh;
+  display: flex;
+  background: #1a1a1a;
+  font-family: Arial, sans-serif;
+  color: white;
 }
 
-#app {
+.main-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  width: 100vw;
-  padding: 16px;
-  box-sizing: border-box;
+}
+
+.circle-container {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.voice-circle {
+  color: white;
+  font-size: 200px;
+  margin: 0;
+  line-height: 1;
+  cursor: pointer;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  transform-origin: center;
+  transition: transform 0.1s ease;
 }
 
 #status {
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
   text-align: center;
-  min-height: 24px;
-  font-weight: 500;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  min-height: 30px;
+  margin-bottom: 20px;
+  font-weight: 400;
 }
 
 #status.error {
-  color: #ff8989;
-  font-weight: 500;
+  color: #ff4757;
 }
 
 .controls {
   position: fixed;
-  bottom: 40px;
+  bottom: 30px;
   display: flex;
-  gap: 8px;
-  background-color: rgba(0, 0, 0, 0.3);
-  padding: 8px 12px;
-  border-radius: 999px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  align-items: center;
+  gap: 40px;
 }
 
-.control-button {
-  background: transparent;
+.btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
   border: none;
-  color: #e0e0e0;
   cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-family: 'Google Sans', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  background: #333;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.control-button:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.1);
+.btn i {
+  font-size: 20px;
 }
 
-.control-button:disabled {
-  color: rgba(255, 255, 255, 0.4);
+.btn:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn.exit {
+  background: #ff4757;
+}
+
+.btn.mic {
+  background: #333;
+}
+
+.btn.mic.muted {
+  background: #ff4757;
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.voice-circle.listening {
+  animation: pulse 1.5s infinite;
 }
